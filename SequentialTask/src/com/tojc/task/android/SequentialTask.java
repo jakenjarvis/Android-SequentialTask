@@ -252,6 +252,10 @@ public class SequentialTask
 		@Override
 		public List<TaskInterface> getChilds()
 		{
+			if(this.childs == null)
+			{
+				throw new IllegalStateException("Invalid call after this destroyed.");
+			}
 			return this.childs;
 		}
 
@@ -279,6 +283,10 @@ public class SequentialTask
 			if(this.getUuid().equals(childtask.getUuid()))
 			{
 				throw new IllegalStateException("Themselves can not be registered.");
+			}
+			if(this.childs == null)
+			{
+				throw new IllegalStateException("Invalid call after this destroyed.");
 			}
 			for(TaskInterface child : this.childs)
 			{
@@ -359,12 +367,15 @@ public class SequentialTask
 		public boolean isChildsCompleted()
 		{
 			boolean result = true;
-			for(TaskInterface childtask : this.childs)
+			if(this.childs != null)
 			{
-				if(childtask.getStatus() != TaskStatus.Completed)
+				for(TaskInterface childtask : this.childs)
 				{
-					result = false;
-					break;
+					if(childtask.getStatus() != TaskStatus.Completed)
+					{
+						result = false;
+						break;
+					}
 				}
 			}
 			return result;
@@ -393,11 +404,14 @@ public class SequentialTask
 
 		protected void processChildAllSetStatus(TaskStatus ifstatus, TaskStatus setstatus)
 		{
-			for(TaskInterface child : this.childs)
+			if(this.childs != null)
 			{
-				if(child.getStatus() == ifstatus)
+				for(TaskInterface child : this.childs)
 				{
-					child.setStatus(setstatus);
+					if(child.getStatus() == ifstatus)
+					{
+						child.setStatus(setstatus);
+					}
 				}
 			}
 		}
@@ -405,16 +419,19 @@ public class SequentialTask
 		protected void processTaskCompleted()
 		{
 			// this task completed
-			if((this.status == TaskStatus.Completed) && (this.isChildsCompleted()))
+			if(this.childs != null)
 			{
-				if(this.parentListener != null)
+				if((this.status == TaskStatus.Completed) && (this.isChildsCompleted()))
 				{
-					this.parentListener.onTaskCompleted(this);
+					if(this.parentListener != null)
+					{
+						this.parentListener.onTaskCompleted(this);
+					}
 				}
-			}
-			else
-			{
-				throw new IllegalStateException("Must complete all together parent and childs.");
+				else
+				{
+					throw new IllegalStateException("Must complete all together parent and childs.");
+				}
 			}
 		}
 
@@ -501,6 +518,10 @@ public class SequentialTask
 		@Override
 		public int count()
 		{
+			if(this.childs == null)
+			{
+				throw new IllegalStateException("Invalid call after this destroyed.");
+			}
 			return this.childs.size();
 		}
 
