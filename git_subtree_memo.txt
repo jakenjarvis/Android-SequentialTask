@@ -1,0 +1,3 @@
+
+git subtree add --prefix=repository git@github.com:jakenjarvis/Android-SequentialTask.git gh-pages --squash
+
