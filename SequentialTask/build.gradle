@@ -1,22 +1,22 @@
 apply plugin: 'android-library'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
-project.group = "com.tojc.task.android"
-project.version = "1.0.0"
+project.group = groupId
+project.version = groupVersion
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+    compileSdkVersion androidCompileSdkVersion
+    buildToolsVersion androidBuildToolsVersion
 
     defaultConfig {
-        minSdkVersion 10
-        targetSdkVersion 19
-        versionCode 1
-        versionName project.version
+        minSdkVersion androidMinSdkVersion
+        targetSdkVersion androidTargetSdkVersion
+        versionCode androidVersionCode
+        versionName androidVersionName
     }
 
     sourceSets {
@@ -44,22 +44,99 @@ android {
         release.setRoot('build-types/release')
     }
 
-    buildTypes {
-        release {
-            runProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-        }
+
+//    signingConfigs {
+//        debug {
+//            storeFile file(getSystemPropertiesNullToReadLine("signature-debug-storeFile", "Enter debug keystore path"))
+//            storePassword "android"
+//            keyAlias "androiddebugkey"
+//            keyPassword "android"
+//        }
+//        release {
+//            storeFile file(getSystemPropertiesNullToReadLine("signature-release-storeFile", "Enter release keystore path"))
+//            storePassword getSystemPropertiesNullToReadLine("signature-release-storePassword", "Enter release keystore password")
+//            keyAlias getSystemPropertiesNullToReadLine("signature-release-keyAlias", "Enter release key alias")
+//            keyPassword getSystemPropertiesNullToReadLine("signature-release-keyPassword", "Enter release key password")
+//        }
+//    }
+//
+//    buildTypes {
+//        debug {
+//            debuggable true
+//            zipAlign true
+//            runProguard false
+//            signingConfig signingConfigs.debug
+//        }
+//        release {
+//            debuggable false
+//            zipAlign true
+//            runProguard true
+//            //proguardFile getDefaultProguardFile('proguard-android.txt')
+//            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+//            signingConfig signingConfigs.release
+//            proguardFile 'proguard-project.txt'
+//        }
+//    }
+
+}
+
+// http://www.gradle.org/docs/current/dsl/org.gradle.api.tasks.bundling.Zip.html
+task aarlib(type: Zip) {
+    extension = 'aar'
+    destinationDir = file('build/libs')
+    archiveName = "${project.name}-${project.version}.aar"
+}
+
+// http://www.gradle.org/docs/current/dsl/org.gradle.api.tasks.bundling.Jar.html
+task jarlib(type: Jar) {
+    extension = 'jar'
+    destinationDir = file('build/bundles/release')
+    archiveName = 'classes.jar'
+}
+
+// http://www.gradle.org/docs/current/dsl/org.gradle.api.tasks.bundling.Zip.html
+// https://github.com/googlemaps/android-maps-utils/blob/master/library/build.gradle
+task apklib(type: Zip) {
+    dependsOn 'packageReleaseJar'
+    extension = 'apklib'
+
+    from 'AndroidManifest.xml'
+    into('res') {
+        from 'res'
+    }
+    into('src') {
+        from 'src'
     }
 }
 
-uploadArchives {
+artifacts {
+    archives aarlib
+    archives apklib
+    archives jarlib
+}
+
+// http://www.gradle.org/docs/current/userguide/publishing_maven.html
+// http://www.flexlabs.org/2013/06/using-local-aar-android-library-packages-in-gradle-builds
+// http://www.rickcarragher.com/blog/2014/01/21/gradle-and-android
+
+// gradlew clean build publish
+
+android.libraryVariants
+publishing {
+    publications {
+        mavenAar(MavenPublication) {
+            artifact aarlib
+        }
+        mavenApklib(MavenPublication) {
+            artifact apklib
+        }
+        mavenJar(MavenPublication) {
+            artifact jarlib
+        }
+    }
     repositories {
-        mavenDeployer {
-            repository(url: uri(mavenRepository))
-            //pom.version = mavenVersion
-            //pom.groupId = mavenGroupId
-            //pom.artifactId = mavenArtifactId
-            pom.packaging = "aar"
+        maven {
+            url(mavenRepository)
         }
     }
 }

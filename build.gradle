@@ -5,7 +5,6 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:0.9.+'
-        classpath 'org.eclipse.jgit:org.eclipse.jgit:3.3.+'
     }
 }
 
@@ -17,4 +16,61 @@ allprojects {
 
 ext {
     mavenRepository = "../repository"
+
+    // http://qiita.com/gfx/items/fd8e201f9dc71518abb8
+    revision = executeCommandLine("cd ${project.rootDir}", "git rev-parse --short HEAD").in.text.trim()
+    builddate = new Date().format('yyyyMMdd-HHmmss')
+
+    groupId = "com.tojc.task.android"
+    groupVersion = "1.0.0-" + builddate + "-" + revision
+
+    // android sdk
+    androidCompileSdkVersion = 19
+    androidBuildToolsVersion = "19.0.3"
+
+    // AndroidManifest.xml
+    androidMinSdkVersion = 10
+    androidTargetSdkVersion = 19
+    androidVersionCode = 1
+    androidVersionName = groupVersion
+
+}
+
+def getSystemPropertiesNullToReadLine(propertyname, readlinemessage)
+{
+    def result = ""
+    if(System.properties.hasProperty(propertyname)
+        && (System.properties[propertyname].length() >= 1))
+    {
+        result = System.properties[propertyname]
+    }
+    else
+    {
+        result = System.console().readLine("\n\$ " + readlinemessage + ": ")
+    }
+    return result
+}
+
+
+def executeCommandLine(... commands)
+{
+    def shell = ""
+    def param = ""
+    def delimiter = ""
+
+    if(System.getProperty("os.name") ==~ /(?i).*windows.*/)
+    {
+        // windows
+        shell = "cmd"
+        param = "/c"
+        delimiter = " & "
+    }
+    else
+    {
+        // unix
+        shell = "sh"
+        param = "-c"
+        delimiter = " ; "
+    }
+    return [shell, param, commands.join(delimiter)].execute()
 }
