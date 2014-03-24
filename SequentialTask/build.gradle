@@ -1,3 +1,6 @@
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 apply plugin: 'android-library'
 apply plugin: 'maven-publish'
 
@@ -5,18 +8,21 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
+def defaultConfigVersionCode = getAndroidManifestVersionCode()
+def defaultConfigVersionName = "1.0." + defaultConfigVersionCode + "-" + builddate + "-" + revision
+
 project.group = groupId
-project.version = groupVersion
+project.version = defaultConfigVersionName
 
 android {
     compileSdkVersion androidCompileSdkVersion
     buildToolsVersion androidBuildToolsVersion
 
     defaultConfig {
-        minSdkVersion androidMinSdkVersion
-        targetSdkVersion androidTargetSdkVersion
-        versionCode androidVersionCode
-        versionName androidVersionName
+        minSdkVersion defaultConfigMinSdkVersion
+        targetSdkVersion defaultConfigTargetSdkVersion
+        versionCode defaultConfigVersionCode
+        versionName defaultConfigVersionName
     }
 
     sourceSets {
@@ -78,6 +84,41 @@ android {
 //        }
 //    }
 
+}
+
+def getAndroidManifestVersionCode()
+{
+    def result = -1
+    def pattern = Pattern.compile("versionCode=\"(\\d+)\"")
+    def manifestFile = new File(project.projectDir.toString() + '/AndroidManifest.xml')
+    manifestFile.eachLine { line ->
+        def matcher = pattern.matcher(line)
+        if(matcher.find())
+        {
+            result = Integer.parseInt(matcher.group(1))
+            //break
+        }
+    }
+    if(result <= 0)
+    {
+        throw new InvalidUserDataException("versionCode was not found in the $manifestFile")
+    }
+    return result
+}
+
+def getSystemPropertiesNullToReadLine(propertyname, readlinemessage)
+{
+    def result = ""
+    if(System.properties.hasProperty(propertyname)
+        && (System.properties[propertyname].length() >= 1))
+    {
+        result = System.properties[propertyname]
+    }
+    else
+    {
+        result = System.console().readLine("\n\$ " + readlinemessage + ": ")
+    }
+    return result
 }
 
 // http://www.gradle.org/docs/current/dsl/org.gradle.api.tasks.bundling.Zip.html

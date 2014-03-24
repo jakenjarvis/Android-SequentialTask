@@ -14,6 +14,9 @@ allprojects {
     }
 }
 
+subprojects {
+}
+
 ext {
     mavenRepository = "../repository"
 
@@ -22,35 +25,16 @@ ext {
     builddate = new Date().format('yyyyMMdd-HHmmss')
 
     groupId = "com.tojc.task.android"
-    groupVersion = "1.0.0-" + builddate + "-" + revision
 
     // android sdk
     androidCompileSdkVersion = 19
     androidBuildToolsVersion = "19.0.3"
 
     // AndroidManifest.xml
-    androidMinSdkVersion = 10
-    androidTargetSdkVersion = 19
-    androidVersionCode = 1
-    androidVersionName = groupVersion
+    defaultConfigMinSdkVersion = 10
+    defaultConfigTargetSdkVersion = 19
 
 }
-
-def getSystemPropertiesNullToReadLine(propertyname, readlinemessage)
-{
-    def result = ""
-    if(System.properties.hasProperty(propertyname)
-        && (System.properties[propertyname].length() >= 1))
-    {
-        result = System.properties[propertyname]
-    }
-    else
-    {
-        result = System.console().readLine("\n\$ " + readlinemessage + ": ")
-    }
-    return result
-}
-
 
 def executeCommandLine(... commands)
 {
