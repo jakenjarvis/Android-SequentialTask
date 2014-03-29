@@ -8,12 +8,6 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 }
 
-def defaultConfigVersionCode = getAndroidManifestVersionCode()
-def defaultConfigVersionName = "1.0." + defaultConfigVersionCode + "-" + builddate + "-" + revision
-
-project.group = groupId
-project.version = defaultConfigVersionName
-
 android {
     compileSdkVersion androidCompileSdkVersion
     buildToolsVersion androidBuildToolsVersion
@@ -21,8 +15,8 @@ android {
     defaultConfig {
         minSdkVersion defaultConfigMinSdkVersion
         targetSdkVersion defaultConfigTargetSdkVersion
-        versionCode defaultConfigVersionCode
-        versionName defaultConfigVersionName
+        versionCode getAndroidManifestVersionCode()
+        versionName project.version
     }
 
     sourceSets {
@@ -50,40 +44,21 @@ android {
         release.setRoot('build-types/release')
     }
 
+    // Note that most of the configuration of the Build Type do not apply to library projects.
+    // http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Differences-between-a-Project-and-a-Library-Project
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            debuggable false
+        }
+    }
 
-//    signingConfigs {
-//        debug {
-//            storeFile file(getSystemPropertiesNullToReadLine("signature-debug-storeFile", "Enter debug keystore path"))
-//            storePassword "android"
-//            keyAlias "androiddebugkey"
-//            keyPassword "android"
-//        }
-//        release {
-//            storeFile file(getSystemPropertiesNullToReadLine("signature-release-storeFile", "Enter release keystore path"))
-//            storePassword getSystemPropertiesNullToReadLine("signature-release-storePassword", "Enter release keystore password")
-//            keyAlias getSystemPropertiesNullToReadLine("signature-release-keyAlias", "Enter release key alias")
-//            keyPassword getSystemPropertiesNullToReadLine("signature-release-keyPassword", "Enter release key password")
-//        }
-//    }
-//
-//    buildTypes {
-//        debug {
-//            debuggable true
-//            zipAlign true
-//            runProguard false
-//            signingConfig signingConfigs.debug
-//        }
-//        release {
-//            debuggable false
-//            zipAlign true
-//            runProguard true
-//            //proguardFile getDefaultProguardFile('proguard-android.txt')
-//            proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
-//            signingConfig signingConfigs.release
-//            proguardFile 'proguard-project.txt'
-//        }
-//    }
-
+    // http://stackoverflow.com/questions/20699147/gradle-build-fails-on-lint-task
+    lintOptions {
+        abortOnError false
+    }
 }
 
 def getAndroidManifestVersionCode()
@@ -106,41 +81,47 @@ def getAndroidManifestVersionCode()
     return result
 }
 
-def getSystemPropertiesNullToReadLine(propertyname, readlinemessage)
-{
-    def result = ""
-    if(System.properties.hasProperty(propertyname)
-        && (System.properties[propertyname].length() >= 1))
-    {
-        result = System.properties[propertyname]
-    }
-    else
-    {
-        result = System.console().readLine("\n\$ " + readlinemessage + ": ")
-    }
-    return result
+ext.javadocLinks = [
+] as String[]
+
+
+// http://www.gradle.org/docs/current/dsl/org.gradle.api.tasks.javadoc.Javadoc.html
+// http://www.gradle.org/docs/current/userguide/java_plugin.html#sec:javadoc
+// http://www.gradle.org/docs/current/javadoc/org/gradle/external/javadoc/StandardJavadocDocletOptions.html
+// http://snowdream.github.io/blog/android/2013/11/01/how-to-generate-javadocs-with-android-gradle-plugin/
+// https://github.com/chrisbanes/gradle-mvn-push/issues/9
+// https://github.com/snowdream/android-autoupdater/blob/master/config/android-library.gradle
+task generateJavadoc(type: Javadoc) {
+    source = android.sourceSets.main.allJava
+    classpath += project.files(android.plugin.getRuntimeJarList().join(File.pathSeparator))
+    exclude '**/BuildConfig.java'
+    exclude '**/R.java'
+
+    options.docEncoding = rootProject.defaultEncoding
+    options.charSet = rootProject.defaultEncoding
+    options.links("http://docs.oracle.com/javase/7/docs/api/")
+    options.linksOffline("http://d.android.com/reference", "${android.plugin.sdkDirectory}/docs/reference")
+    options.links(project.ext.javadocLinks)
 }
 
+
 // http://www.gradle.org/docs/current/dsl/org.gradle.api.tasks.bundling.Zip.html
-task aarlib(type: Zip) {
+task artifactAar(type: Zip) {
     extension = 'aar'
     destinationDir = file('build/libs')
-    archiveName = "${project.name}-${project.version}.aar"
 }
 
 // http://www.gradle.org/docs/current/dsl/org.gradle.api.tasks.bundling.Jar.html
-task jarlib(type: Jar) {
+task artifactJar(type: Jar) {
+    from android.sourceSets.main.java
     extension = 'jar'
-    destinationDir = file('build/bundles/release')
-    archiveName = 'classes.jar'
+    destinationDir = file('build/libs/')
 }
 
 // http://www.gradle.org/docs/current/dsl/org.gradle.api.tasks.bundling.Zip.html
 // https://github.com/googlemaps/android-maps-utils/blob/master/library/build.gradle
-task apklib(type: Zip) {
-    dependsOn 'packageReleaseJar'
+task artifactApklib(type: Zip) {
     extension = 'apklib'
-
     from 'AndroidManifest.xml'
     into('res') {
         from 'res'
@@ -148,12 +129,13 @@ task apklib(type: Zip) {
     into('src') {
         from 'src'
     }
+    destinationDir = file('build/libs/')
 }
 
 artifacts {
-    archives aarlib
-    archives apklib
-    archives jarlib
+    archives artifactAar
+    archives artifactApklib
+    archives artifactJar
 }
 
 // http://www.gradle.org/docs/current/userguide/publishing_maven.html
@@ -165,14 +147,14 @@ artifacts {
 android.libraryVariants
 publishing {
     publications {
-        mavenAar(MavenPublication) {
-            artifact aarlib
+        releaseAar(MavenPublication) {
+            artifact artifactAar
         }
-        mavenApklib(MavenPublication) {
-            artifact apklib
+        releaseApklib(MavenPublication) {
+            artifact artifactApklib
         }
-        mavenJar(MavenPublication) {
-            artifact jarlib
+        releaseJar(MavenPublication) {
+            artifact artifactJar
         }
     }
     repositories {
