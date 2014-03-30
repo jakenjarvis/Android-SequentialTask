@@ -8,9 +8,9 @@ buildscript {
     }
 }
 
-ext {
-    defaultEncoding = 'UTF-8'
+apply from: "gradle/library/allprojectsSetEncodingUTF8.gradle"
 
+ext {
     mavenRepository = "../repository"
 
     // http://qiita.com/gfx/items/fd8e201f9dc71518abb8
@@ -27,12 +27,6 @@ ext {
 }
 
 allprojects {
-    tasks.withType(AbstractCompile) each {
-        it.options.encoding = defaultEncoding
-    }
-    tasks.withType(GroovyCompile) each {
-        it.groovyOptions.encoding = defaultEncoding
-    }
     // TODO: How to set? android.compileOptions
     // Deprecated Compile replaced by JavaCompile.
     tasks.withType(JavaCompile) each {
