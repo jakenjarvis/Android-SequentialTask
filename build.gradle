@@ -8,7 +8,7 @@ buildscript {
     }
 }
 
-apply from: "gradle/library/CommonLibrary.gradle"
+apply from: "gradle/commonlibrary/CommonLibrary.gradle"
 
 commonlibrary {
     apply project, "allprojectsSetEncoding"
