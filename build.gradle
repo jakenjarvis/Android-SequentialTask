@@ -2,9 +2,10 @@
 buildscript {
     repositories {
         mavenCentral()
+        jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.11.+'
+        classpath 'com.android.tools.build:gradle:1.0.1+'
     }
 }
 
@@ -17,7 +18,7 @@ commonlibrary {
 
     // patch
     apply(project, "allprojectsPatchDisableLintOptionsAbortOnError")
-    apply(project, "allprojectsPatchEnableAaptOptionsUseAaptPngCruncher")
+    //apply(project, "allprojectsPatchEnableAaptOptionsUseAaptPngCruncher")
 }
 
 ext {
@@ -26,15 +27,15 @@ ext {
     builddate = new Date().format('yyyyMMdd-HHmmss')
 
     // android sdk
-    androidCompileSdkVersion = 19
-    androidBuildToolsVersion = "19.1.0"
+    androidCompileSdkVersion = 21
+    androidBuildToolsVersion = "21.1.2"
 
     // AndroidManifest.xml
     defaultConfigMinSdkVersion = 10
-    defaultConfigTargetSdkVersion = 19
+    defaultConfigTargetSdkVersion = 21
 }
 
 subprojects {
     project.group = "com.tojc.task.android"
-    project.version = "1.0.2" + "-" + builddate + "-" + git_revision_short
+    project.version = "1.0.3" + "-" + builddate + "-" + git_revision_short
 }
