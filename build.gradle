@@ -39,5 +39,5 @@ ext {
 
 subprojects {
     project.group = "com.tojc.task.android"
-    project.version = "1.0.3" + "-" + builddate + "-" + git_revision_short
+    project.version = "1.0.4" + "-" + builddate + "-" + git_revision_short
 }
